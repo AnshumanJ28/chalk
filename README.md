@@ -89,38 +89,7 @@ cd python_app
 python3 app.py             # http://localhost:5000
 ```
 
-## Deploy it yourself
 
-Chalk is a normal Docker container, so any host that builds from a
-`Dockerfile` works.
-
-<details>
-<summary><b>Render.com</b> (what powers the live demo)</summary>
-
-1. Push this folder to a GitHub repo.
-2. On [render.com](https://render.com) → **New → Web Service** → connect the repo.
-3. Render auto-detects the `Dockerfile`. Leave defaults, set the port to `8080`
-   (already exposed in the Dockerfile).
-4. Deploy — you'll get a public `https://your-app.onrender.com` URL.
-   Free tier sleeps after inactivity; first request after idle takes ~30s to wake up.
-</details>
-
-<details>
-<summary><b>Fly.io</b></summary>
-
-```bash
-fly launch      # detects the Dockerfile, asks a few questions
-fly deploy
-```
-Gives you a public `https://your-app.fly.dev` URL, free allowance covers small apps.
-</details>
-
-<details>
-<summary><b>Railway.app</b></summary>
-
-**New Project → Deploy from GitHub repo** — it detects the `Dockerfile`
-and gives you a public URL automatically.
-</details>
 
 ## Roadmap
 
