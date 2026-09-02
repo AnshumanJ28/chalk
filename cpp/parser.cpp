@@ -228,13 +228,14 @@ struct Parser {
 
             bool ok;
             Op fo = fnOp(name, ok);
-            if (ok) {
-                expect(Tok::LP);
+            if (ok && cur.type == Tok::LP) {
+                adv(); // consume LP
                 ExprPtr arg = parseExpr();
                 expect(Tok::RP);
                 return fn(fo, arg);
             }
 
+            if (name == "i") return var("i");
             return var(name);
         }
 
