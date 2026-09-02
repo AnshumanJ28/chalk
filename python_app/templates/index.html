@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chalk — Advanced Calculus Calculator</title>
+<meta name="description" content="Chalk: A powerful symbolic calculus calculator built from scratch. Differentiate, integrate, solve equations, plot graphs, and compute vector calculus — all in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+  :root{
+    --board:#1b2b23;
+    --board-2:#16221b;
+    --chalk:#eef2ea;
+    --chalk-dim:#a9b8ac;
+    --yellow:#e8c766;
+    --coral:#e08a6f;
+    --blue:#7fb3c9;
+    --green:#8fbf8a;
+    --rail:#0e1712;
+    --line: rgba(238,242,234,0.07);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, var(--line) 0px, var(--line) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, var(--line) 0px, var(--line) 1px, transparent 1px, transparent 34px),
+      radial-gradient(ellipse at top left, var(--board) 0%, var(--board-2) 70%);
+    color:var(--chalk);
+    font-family:'JetBrains Mono', monospace;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    margin:0;padding:0;
+  }
+  
+  /* Scrollbar Theme */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(8, 14, 11, 0.5);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(238, 242, 234, 0.2);
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--yellow);
+  }
+
+  .wrap{max-width:1060px; width:100%; margin:0 auto; padding:32px 24px 40px; flex:1;}
+
+  .top-header-bar {
+    background: rgba(22, 34, 27, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(238, 242, 234, 0.12);
+    border-radius: 12px;
+    padding: 14px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-brand h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 42px;
+    margin: 0;
+    color: var(--chalk);
+    text-shadow: 0 0 12px rgba(238, 242, 234, 0.15);
+    line-height: 1;
+  }
+  .header-brand h1 span { color: var(--yellow); }
+
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; }
+  nav button {
+    background: rgba(238, 242, 234, 0.04);
+    border: 1px solid rgba(238, 242, 234, 0.15);
+    color: var(--chalk-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s ease;
+    white-space: nowrap;
+  }
+  nav button:hover {
+    color: var(--chalk);
+    background: rgba(238, 242, 234, 0.08);
+    border-color: rgba(238, 242, 234, 0.35);
+  }
+  nav button.active {
+    color: var(--rail);
+    background: var(--yellow);
+    border-color: var(--yellow);
+    box-shadow: 0 0 12px rgba(232, 199, 102, 0.3);
+  }
+
+  /* Info Modal */
+  .info-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(8, 14, 11, 0.85); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .info-modal.show { opacity: 1; pointer-events: auto; }
+  .info-content {
+    background: var(--rail); border: 1px solid rgba(238,242,234,0.15);
+    border-radius: 12px; padding: 32px; max-width: 600px; width: 90%;
+    max-height: 80vh; overflow-y: auto; color: var(--chalk);
+    box-shadow: 0 16px 64px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif;
+  }
+  .info-content h2 { margin-top: 0; color: var(--yellow); font-weight: 500; font-size: 22px; }
+  .info-content table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .info-content th, .info-content td { padding: 12px 10px; border-bottom: 1px solid rgba(238,242,234,0.08); text-align: left; }
+  .info-content th { color: var(--chalk-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;}
+  .info-content code { background: rgba(238,242,234,0.06); padding: 4px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--blue); }
+  .info-close { float: right; background: none; border: none; color: var(--chalk-dim); cursor: pointer; font-size: 28px; line-height: 1; margin-top: -8px; }
+  .info-close:hover { color: var(--chalk); }
+  
+  .info-btn {
+    background: none; border: 1px solid rgba(238,242,234,0.2); color: var(--chalk-dim);
+    border-radius: 50%; width: 28px; height: 28px; font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; cursor: pointer; margin-left: 16px; display: inline-flex;
+    align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .info-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+  .header-brand { display: flex; align-items: center; }
+
+  .panel{
+    background:rgba(14,23,18,0.55);
+    border:1px solid rgba(238,242,234,0.12);
+    border-radius:10px;
+    padding:26px;
+    display:none;
+  }
+  .panel.active{display:block;}
+
+  .field-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+  .field{flex:1; min-width:180px;}
+  label{display:block; font-size:11px; color:var(--chalk-dim); margin-bottom:5px; letter-spacing:0.5px; text-transform:uppercase;}
+  input[type=text], select{
+    width:100%;
+    background:var(--rail);
+    border:1.5px solid rgba(238,242,234,0.18);
+    color:var(--chalk);
+    font-family:'JetBrains Mono', monospace;
+    font-size:15px;
+    padding:11px 13px;
+    border-radius:6px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input[type=text]:focus, select:focus{border-color:var(--yellow);}
+  input.small{max-width:100px;}
+  select{font-size:13px; cursor:pointer;}
+
+  .runbtn{
+    margin-top:6px;
+    background:var(--coral);
+    color:var(--rail);
+    border:none;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:13px;
+    padding:11px 20px;
+    border-radius:6px;
+    cursor:pointer;
+    letter-spacing:0.5px;
+    transition:transform .1s ease, background .15s ease;
+  }
+  .runbtn:hover{background:#e69b81; transform:translateY(-1px);}
+  .runbtn:active{transform:translateY(0);}
+
+  .result{
+    margin-top:18px;
+    padding:16px 18px;
+    background:var(--rail);
+    border-left:4px solid var(--green);
+    border-radius:4px;
+    min-height:24px;
+    word-break:break-word;
+    display:none;
+  }
+  .result.show{display:block;}
+  .result.err{border-left-color:var(--coral); color:var(--coral); font-size:13px;}
+  .result .tag{display:block; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--chalk-dim); margin-bottom:8px;}
+  .result .tag.errtag{color:var(--coral);}
+  .result .math-output{font-size:20px; line-height:1.6;}
+  .result .plain-output{font-size:13px; color:var(--chalk-dim); margin-top:8px; font-family:'JetBrains Mono', monospace;}
+  .result .copy-btns{margin-top:10px; display:flex; gap:8px;}
+  .copy-btn{
+    font-size:10px; padding:4px 10px; border-radius:4px; cursor:pointer;
+    background:rgba(238,242,234,0.06); border:1px solid rgba(238,242,234,0.15);
+    color:var(--chalk-dim); font-family:'JetBrains Mono', monospace;
+    transition: all .15s ease;
+  }
+  .copy-btn:hover{background:rgba(238,242,234,0.12); color:var(--chalk);}
+
+  .math-preview{
+    margin-top:6px; padding:8px 12px; min-height:26px;
+    background:rgba(14,23,18,0.4); border-radius:4px;
+    border:1px solid rgba(238,242,234,0.06);
+    font-size:16px; color:var(--chalk);
+  }
+  .math-preview .katex{color:var(--chalk);}
+
+  .hint{font-size:11px; color:var(--chalk-dim); margin-top:10px; line-height:1.6;}
+  .hint code{color:var(--blue);}
+
+  .examples{margin-top:14px; display:flex; gap:7px; flex-wrap:wrap;}
+  .ex{
+    font-size:11px; background:rgba(127,179,201,0.12); color:var(--blue);
+    border:1px solid rgba(127,179,201,0.3); padding:4px 9px; border-radius:14px;
+    cursor:pointer;
+  }
+  .ex:hover{background:rgba(127,179,201,0.22);}
+
+  .szbtn {
+    background:transparent;
+    border:1.5px solid rgba(238,242,234,0.25);
+    color:var(--chalk-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; font-weight:600;
+    padding:5px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .szbtn:hover { color:var(--chalk); border-color:rgba(238,242,234,0.5); }
+  .szbtn.active { color:var(--rail); background:var(--yellow); border-color:var(--yellow); }
+
+  /* Graph canvas */
+  .graph-container{
+    position:relative; width:100%; height:450px;
+    background:var(--rail); border:1px solid rgba(238,242,234,0.12);
+    border-radius:8px; margin-top:14px; overflow:hidden; cursor:crosshair;
+  }
+  .graph-container canvas{width:100%; height:100%;}
+  .graph-controls{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;}
+  .graph-controls button{
+    font-size:11px; padding:6px 12px; border-radius:5px; cursor:pointer;
+    background:rgba(238,242,234,0.06); border:1px solid rgba(238,242,234,0.2);
+    color:var(--chalk-dim); font-family:'JetBrains Mono', monospace;
+    transition: all .15s ease;
+  }
+  .graph-controls button:hover{background:rgba(238,242,234,0.12); color:var(--chalk);}
+  .graph-info{font-size:11px; color:var(--chalk-dim); margin-left:auto;}
+
+  footer {
+    text-align:center;
+    color:var(--chalk-dim);
+    font-size:13px;
+    padding:20px 24px;
+    border-top:1px solid rgba(238,242,234,0.08);
+    background:rgba(14,23,18,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    margin-top:auto;
+  }
+  footer a {
+    color:var(--chalk-dim);
+    display:inline-flex;
+    align-items:center;
+    transition:color .2s ease, transform .2s ease;
+  }
+  footer a:hover { color:var(--yellow); transform:translateY(-1px); }
+  footer svg { width:20px; height:20px; fill:currentColor; }
+
+  /* Side Chalk Accents */
+  .chalk-side-line {
+    position: fixed; top: 0; bottom: 0; width: 2px;
+    background: repeating-linear-gradient(180deg,
+      rgba(232, 199, 102, 0.22) 0px, rgba(232, 199, 102, 0.22) 12px,
+      transparent 12px, transparent 22px);
+    pointer-events: none; z-index: 0;
+  }
+  .chalk-side-line.left-line { left: 45px; }
+  .chalk-side-line.right-line { right: 45px; }
+
+  .chalk-margin-doodles {
+    position: fixed; top: 0; bottom: 0; width: 140px;
+    display: flex; flex-direction: column; justify-content: space-around;
+    align-items: center; pointer-events: none; z-index: 0; user-select: none;
+  }
+  .chalk-margin-doodles.left { left: 10px; }
+  .chalk-margin-doodles.right { right: 10px; }
+  .doodle {
+    font-family: 'Caveat', cursive; font-size: 24px;
+    color: rgba(238, 242, 234, 0.16);
+    text-shadow: 0 0 8px rgba(238, 242, 234, 0.08);
+    white-space: nowrap; letter-spacing: 0.5px;
+  }
+  .doodle.yellow { color: rgba(232, 199, 102, 0.22); text-shadow: 0 0 8px rgba(232, 199, 102, 0.12); }
+  .doodle.blue { color: rgba(127, 179, 201, 0.22); }
+  .doodle.rot-l { transform: rotate(-7deg); }
+  .doodle.rot-r { transform: rotate(6deg); }
+
+  @media (max-width: 1250px) {
+    .chalk-side-line, .chalk-margin-doodles { display: none; }
+  }
+  @media (max-width: 700px) {
+    nav button { font-size:10px; padding:6px 8px; }
+    .graph-container { height: 320px; }
+  }
+</style>
+</head>
+<body>
+  <div class="chalk-side-line left-line"></div>
+  <div class="chalk-side-line right-line"></div>
+  <div class="chalk-margin-doodles left">
+    <div class="doodle rot-l">&int; f(x) dx</div>
+    <div class="doodle yellow rot-r">&part;y / &part;x</div>
+    <div class="doodle rot-l">lim<sub>x&rarr;&infin;</sub></div>
+    <div class="doodle blue rot-r">A &middot; x = b</div>
+    <div class="doodle rot-l">&sum; a<sub>n</sub></div>
+  </div>
+  <div class="chalk-margin-doodles right">
+    <div class="doodle yellow rot-r">e<sup>i&pi;</sup> + 1 = 0</div>
+    <div class="doodle rot-l">&radic;(x&sup2; + y&sup2;)</div>
+    <div class="doodle blue rot-r">&nabla; &times; F</div>
+    <div class="doodle rot-l">d/dx [sin x]</div>
+    <div class="doodle yellow rot-r">&lambda; &middot; I</div>
+  </div>
+
+<div class="wrap">
+  <header class="top-header-bar">
+    <div class="header-brand">
+      <h1>chalk<span>.</span></h1>
+      <button class="info-btn" onclick="toggleInfo()">i</button>
+    </div>
+    <nav>
+      <button data-panel="diff" class="active">Differentiate</button>
+      <button data-panel="integ">Integrate</button>
+      <button data-panel="lim">Limit</button>
+      <button data-panel="solve">Solve</button>
+      <button data-panel="vector">Vector ∇</button>
+      <button data-panel="ode">ODE</button>
+      <button data-panel="series">Series</button>
+      <button data-panel="laplace">Transforms</button>
+      <button data-panel="complex">Complex</button>
+      <button data-panel="fourier">Fourier</button>
+      <button data-panel="graph">Graph</button>
+      <button data-panel="eval">Evaluate</button>
+    </nav>
+  </header>
+
+  <div class="panel active" id="diff">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="diff-expr" value="x^3 + sin(2*x) - ln(x)" oninput="livePreview('diff-expr','diff-preview')">
+        <div class="math-preview" id="diff-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>w.r.t.</label>
+        <input type="text" id="diff-var" class="small" value="x">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Order</label>
+        <select id="diff-order" onchange="updateDiffBtn()">
+          <option value="1">1st</option>
+          <option value="2">2nd</option>
+          <option value="3">3rd</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Mixed partials (comma-separated vars, leave empty for single variable)</label>
+        <input type="text" id="diff-mixed" placeholder="e.g. x,y or x,y,z">
+      </div>
+    </div>
+    <button class="runbtn" id="diff-btn" onclick="run('diff')">d/dx</button>
+    <div class="result" id="diff-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('diff-expr','x^3 + 2*x^2 - 5*x + 7')">x³ + 2x² − 5x + 7</span>
+      <span class="ex" onclick="setEx('diff-expr','sin(x)*cos(x)')">sin(x)·cos(x)</span>
+      <span class="ex" onclick="setEx('diff-expr','x^2/(x+1)')">x² / (x+1)</span>
+      <span class="ex" onclick="setEx('diff-expr','exp(3*x)')">e^(3x)</span>
+      <span class="ex" onclick="setEx('diff-expr','asin(x)')">sin⁻¹(x)</span>
+      <span class="ex" onclick="setEx('diff-expr','x^2*y^3')">x²y³ (mixed)</span>
+    </div>
+    <div class="hint">Supports: <code>sin cos tan asin/arcsin/sin^-1 acos/arccos/cos^-1 atan/arctan/tan^-1 ln log exp sqrt abs</code>, <code>^</code> for powers, <code>pi</code> and <code>e</code>.</div>
+  </div>
+
+  <div class="panel" id="integ">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="integ-expr" value="3*x^2 + sin(2*x)" oninput="livePreview('integ-expr','integ-preview')">
+        <div class="math-preview" id="integ-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>w.r.t.</label>
+        <input type="text" id="integ-var" class="small" value="x">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Type</label>
+        <select id="integ-type" onchange="toggleIntegLimits()">
+          <option value="indefinite">Indefinite ∫</option>
+          <option value="definite">Definite ∫ₐᵇ</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Order</label>
+        <select id="integ-order" onchange="updateIntegBtn()">
+          <option value="1">1st</option>
+          <option value="2">2nd</option>
+          <option value="3">3rd</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row" id="integ-limits-row" style="display:none;">
+      <div class="field" style="flex:0;">
+        <label>Lower (a)</label>
+        <input type="text" id="integ-lower" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Upper (b)</label>
+        <input type="text" id="integ-upper" class="small" value="1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Mixed integrals (comma-separated vars, leave empty for single variable)</label>
+        <input type="text" id="integ-mixed" placeholder="e.g. x,y or x,y,z">
+      </div>
+    </div>
+    <button class="runbtn" id="integ-btn" onclick="run('integ')">∫ dx</button>
+    <div class="result" id="integ-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('integ-expr','x^2')">x²</span>
+      <span class="ex" onclick="setEx('integ-expr','1/x')">1/x</span>
+      <span class="ex" onclick="setEx('integ-expr','sin(3*x+1)')">sin(3x+1)</span>
+      <span class="ex" onclick="setEx('integ-expr','exp(2*x)')">e^(2x)</span>
+      <span class="ex" onclick="setEx('integ-expr','1/(2*x+3)')">1/(2x+3)</span>
+    </div>
+    <div class="hint">Indefinite: polynomials, 1/x, linear-argument trig/exp/ln. Definite: symbolic FTC + Adaptive Simpson quadrature fallback.</div>
+  </div>
+
+  <div class="panel" id="lim">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="lim-expr" value="sin(x)/x" oninput="livePreview('lim-expr','lim-preview')">
+        <div class="math-preview" id="lim-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>variable</label>
+        <input type="text" id="lim-var" class="small" value="x">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>approaches</label>
+        <input type="text" id="lim-point" class="small" value="0">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('lim')">lim</button>
+    <div class="result" id="lim-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('lim-expr','sin(x)/x'); setEx('lim-point','0')">sin(x)/x → 0</span>
+      <span class="ex" onclick="setEx('lim-expr','(x^2-1)/(x-1)'); setEx('lim-point','1')">(x²−1)/(x−1) → 1</span>
+      <span class="ex" onclick="setEx('lim-expr','(3*x^2+2)/(x^2+1)'); setEx('lim-point','inf')">rational → ∞</span>
+      <span class="ex" onclick="setEx('lim-expr','1/x'); setEx('lim-point','0')">1/x → 0</span>
+    </div>
+    <div class="hint">Use <code>inf</code> or <code>-inf</code> for limits at infinity. Uses direct substitution → L'Hôpital's rule → numeric fallback.</div>
+  </div>
+
+  <div class="panel" id="solve">
+    <div class="field-row">
+      <div class="field">
+        <label>equation = 0</label>
+        <input type="text" id="solve-expr" value="x^2 - 5*x + 6" oninput="livePreview('solve-expr','solve-preview')">
+        <div class="math-preview" id="solve-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>solve for</label>
+        <input type="text" id="solve-var" class="small" value="x">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('solve')">solve</button>
+    <div class="result" id="solve-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('solve-expr','2*x - 4')">linear</span>
+      <span class="ex" onclick="setEx('solve-expr','x^2 - 5*x + 6')">quadratic</span>
+      <span class="ex" onclick="setEx('solve-expr','x^2 + 1')">complex roots</span>
+      <span class="ex" onclick="setEx('solve-expr','x^3 - 6*x^2 + 11*x - 6')">cubic (numeric)</span>
+    </div>
+    <div class="hint">Write the equation as an expression equal to zero. Linear/quadratic solved exactly; higher degree via Newton's method.</div>
+  </div>
+
+  <div class="panel" id="system">
+    <div class="field-row">
+      <div class="field" style="flex:0; min-width:180px;">
+        <label>System Size</label>
+        <div style="display:flex; gap:8px;">
+          <button id="size-2" class="szbtn active" onclick="setSystemSize(2)">2x2</button>
+          <button id="size-3" class="szbtn" onclick="setSystemSize(3)">3x3</button>
+          <button id="size-4" class="szbtn" onclick="setSystemSize(4)">4x4</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Variables (comma-separated)</label>
+        <input type="text" id="system-vars" value="x, y" oninput="updateSystemInputs()">
+      </div>
+    </div>
+    <div id="system-eqs-container"></div>
+    <button class="runbtn" onclick="run('system')">solve system</button>
+    <div class="result" id="system-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="loadSystemExample(2, ['x + y = 3', 'x - y = 1'], 'x, y')">2x2: x+y=3, x-y=1</span>
+      <span class="ex" onclick="loadSystemExample(3, ['x + y + z = 6', '2*y + 5*z = -4', '2*x + 5*y - z = 27'], 'x, y, z')">3x3</span>
+      <span class="ex" onclick="loadSystemExample(4, ['x+y+z+w=10', 'x-y+z-w=2', '2*x+y-z+3*w=17', '3*x-2*y+2*z-w=5'], 'x, y, z, w')">4x4</span>
+    </div>
+    <div class="hint">Solves up to 4 linear equations using a matrix solver.</div>
+  </div>
+
+  <div class="panel" id="vector">
+    <div class="field-row">
+      <div class="field" style="flex:0; min-width:200px;">
+        <label>Operation</label>
+        <select id="vec-op" onchange="toggleVectorInputs()">
+          <option value="gradient">∇f — Gradient</option>
+          <option value="divergence">∇·F — Divergence</option>
+          <option value="curl">∇×F — Curl</option>
+          <option value="laplacian">∇²f — Laplacian</option>
+          <option value="line_integral">∫_C F·dr — Line Integral</option>
+          <option value="surface_integral">∬_S F·dS — Surface Integral</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Variables</label>
+        <input type="text" id="vec-vars" class="small" value="x,y,z" style="max-width:140px;">
+      </div>
+    </div>
+    <div id="vec-scalar-row" class="field-row">
+      <div class="field">
+        <label>f(x, y, z) =</label>
+        <input type="text" id="vec-scalar-expr" value="x^2 + y^2 + z^2" oninput="livePreview('vec-scalar-expr','vec-preview')">
+        <div class="math-preview" id="vec-preview"></div>
+      </div>
+    </div>
+    <div id="vec-vector-rows" style="display:none;">
+      <div class="field-row">
+        <div class="field">
+          <label>Fₓ =</label>
+          <input type="text" id="vec-fx" value="-y">
+        </div>
+        <div class="field">
+          <label>Fᵧ =</label>
+          <input type="text" id="vec-fy" value="x">
+        </div>
+        <div class="field">
+          <label>F_z =</label>
+          <input type="text" id="vec-fz" value="0">
+        </div>
+      </div>
+    </div>
+    <div id="vec-path-row" style="display:none;">
+      <div class="field-row">
+        <div class="field">
+          <label>x(t) / x(u,v) =</label>
+          <input type="text" id="vec-px" value="cos(t)">
+        </div>
+        <div class="field">
+          <label>y(t) / y(u,v) =</label>
+          <input type="text" id="vec-py" value="sin(t)">
+        </div>
+        <div class="field">
+          <label>z(t) / z(u,v) =</label>
+          <input type="text" id="vec-pz" value="t">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field" style="flex:0;">
+          <label>Parameter 1 (t / u)</label>
+          <input type="text" id="vec-p1-var" class="small" value="t">
+        </div>
+        <div class="field" style="flex:0;">
+          <label>From</label>
+          <input type="text" id="vec-p1-start" class="small" value="0">
+        </div>
+        <div class="field" style="flex:0;">
+          <label>To</label>
+          <input type="text" id="vec-p1-end" class="small" value="3.14159">
+        </div>
+        <div class="field" style="flex:0;" id="vec-p2-col-1">
+          <label>Parameter 2 (v)</label>
+          <input type="text" id="vec-p2-var" class="small" value="v">
+        </div>
+        <div class="field" style="flex:0;" id="vec-p2-col-2">
+          <label>From</label>
+          <input type="text" id="vec-p2-start" class="small" value="0">
+        </div>
+        <div class="field" style="flex:0;" id="vec-p2-col-3">
+          <label>To</label>
+          <input type="text" id="vec-p2-end" class="small" value="1">
+        </div>
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('vector')">compute</button>
+    <div class="result" id="vector-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setVecEx('gradient','x^2 + y^2 + z^2')">∇(x²+y²+z²)</span>
+      <span class="ex" onclick="setVecEx('divergence','','x^2','y^2','z^2')">∇·⟨x²,y²,z²⟩</span>
+      <span class="ex" onclick="setVecEx('curl','','-y','x','0')">∇×⟨-y,x,0⟩</span>
+      <span class="ex" onclick="setVecEx('laplacian','x^3 + y^3 + z^3')">∇²(x³+y³+z³)</span>
+    </div>
+    <div class="hint">Vector calculus on scalar fields f(x,y,z) and vector fields F = ⟨Fₓ, Fᵧ, F_z⟩.</div>
+  </div>
+
+  <div class="panel" id="ode">
+    <div class="field-row">
+      <div class="field" style="flex:0;">
+        <label>Type</label>
+        <select id="ode-type" onchange="toggleODEType()">
+          <option value="1">1st Order: dy/dx = f(x,y)</option>
+          <option value="2">2nd Order: ay''+by'+cy = f(x)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row" id="ode-1st-row">
+      <div class="field">
+        <label>dy/dx = f(x, y)</label>
+        <input type="text" id="ode-expr" value="x + y" oninput="livePreview('ode-expr','ode-preview')">
+        <div class="math-preview" id="ode-preview"></div>
+      </div>
+    </div>
+    <div class="field-row" id="ode-2nd-row" style="display:none;">
+      <div class="field" style="flex:0;">
+        <label>a</label>
+        <input type="text" id="ode-a" class="small" value="1">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>b</label>
+        <input type="text" id="ode-b" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>c</label>
+        <input type="text" id="ode-c" class="small" value="1">
+      </div>
+      <div class="field" style="flex:1;">
+        <label>f(x)</label>
+        <input type="text" id="ode-expr2" value="0" placeholder="0 (homogeneous only for symbolic)">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:0;">
+        <label>x₀</label>
+        <input type="text" id="ode-x0" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>y₀</label>
+        <input type="text" id="ode-y0" class="small" value="1">
+      </div>
+      <div class="field" style="flex:0;" id="ode-v0-col" style="display:none;">
+        <label>y'₀ (v₀)</label>
+        <input type="text" id="ode-v0" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>x min</label>
+        <input type="text" id="ode-xmin" class="small" value="-3">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>x max</label>
+        <input type="text" id="ode-xmax" class="small" value="3">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('ode')">solve ODE</button>
+    <div class="result" id="ode-result"></div>
+    <div class="graph-container" id="ode-graph-container" style="display:none;">
+      <canvas id="ode-canvas"></canvas>
+    </div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('ode-expr','x'); setEx('ode-y0','0')">dy/dx = x</span>
+      <span class="ex" onclick="setEx('ode-expr','-2*y'); setEx('ode-y0','1')">dy/dx = -2y</span>
+      <span class="ex" onclick="setEx('ode-expr','x + y'); setEx('ode-y0','1')">dy/dx = x+y</span>
+      <span class="ex" onclick="setEx('ode-expr','sin(x)*y'); setEx('ode-y0','1')">dy/dx = sin(x)·y</span>
+    </div>
+    <div class="hint">Solves 1st-order ODEs: symbolic (separable, direct integration) + numerical RK4 with slope field visualization.</div>
+  </div>
+
+  <div class="panel" id="series">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="series-expr" value="sin(x)" oninput="livePreview('series-expr','series-preview')">
+        <div class="math-preview" id="series-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Center (a)</label>
+        <input type="text" id="series-a" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Terms (n)</label>
+        <input type="text" id="series-terms" class="small" value="5">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('series')">expand</button>
+    <div class="result" id="series-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('series-expr','sin(x)'); setEx('series-a','0')">Maclaurin sin(x)</span>
+      <span class="ex" onclick="setEx('series-expr','exp(x)'); setEx('series-a','0')">Maclaurin e^x</span>
+      <span class="ex" onclick="setEx('series-expr','ln(x)'); setEx('series-a','1')">Taylor ln(x) at a=1</span>
+    </div>
+    <div class="hint">Computes the n-term Taylor polynomial.</div>
+  </div>
+
+  <div class="panel" id="laplace">
+    <div class="field-row">
+      <div class="field" style="flex:0;">
+        <label>Direction</label>
+        <select id="laplace-type" onchange="toggleLaplace()">
+          <option value="forward">Forward: L{f(t)} = F(s)</option>
+          <option value="inverse">Inverse: L⁻¹{F(s)} = f(t)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="laplace-label">f(t) =</label>
+        <input type="text" id="laplace-expr" value="t^2 * exp(3*t)" oninput="livePreview('laplace-expr','laplace-preview')">
+        <div class="math-preview" id="laplace-preview"></div>
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('laplace')">transform</button>
+    <div class="result" id="laplace-result"></div>
+    <div class="examples" id="laplace-ex-fwd">
+      <span class="ex" onclick="setEx('laplace-expr','t^2')">t²</span>
+      <span class="ex" onclick="setEx('laplace-expr','exp(-2*t)')">e⁻²ᵗ</span>
+      <span class="ex" onclick="setEx('laplace-expr','sin(3*t)')">sin(3t)</span>
+      <span class="ex" onclick="setEx('laplace-expr','t * sin(t)')">t·sin(t)</span>
+      <span class="ex" onclick="setEx('laplace-expr','exp(2*t) * cos(t)')">e²ᵗ·cos(t)</span>
+    </div>
+    <div class="examples" id="laplace-ex-inv" style="display:none;">
+      <span class="ex" onclick="setEx('laplace-expr','1/s^3')">1/s³</span>
+      <span class="ex" onclick="setEx('laplace-expr','1/(s-2)')">1/(s-2)</span>
+      <span class="ex" onclick="setEx('laplace-expr','s/(s^2+4)')">s/(s²+4)</span>
+    </div>
+    <div class="hint">Supports polynomials, exponentials, sines, cosines, and their combinations (shifting theorems).</div>
+  </div>
+
+  <div class="panel" id="complex">
+    <div class="field-row">
+      <div class="field" style="flex:0;">
+        <label>Operation</label>
+        <select id="complex-type" onchange="toggleComplex()">
+          <option value="residue">Residue at pole z₀</option>
+          <option value="contour">Contour Integral ∮ f(z) dz</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>f(z) =</label>
+        <input type="text" id="complex-expr" value="1/(z^2 + 1)" oninput="livePreview('complex-expr','complex-preview')">
+        <div class="math-preview" id="complex-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Var</label>
+        <input type="text" id="complex-var" class="small" value="z">
+      </div>
+    </div>
+    <div class="field-row" id="complex-residue-row">
+      <div class="field" style="flex:0;">
+        <label>Re(z₀)</label>
+        <input type="text" id="complex-re" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Im(z₀)</label>
+        <input type="text" id="complex-im" class="small" value="1">
+      </div>
+    </div>
+    <div class="field-row" id="complex-contour-row" style="display:none;">
+      <div class="field" style="flex:0;">
+        <label>Center Re</label>
+        <input type="text" id="complex-cx" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Center Im</label>
+        <input type="text" id="complex-cy" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Radius</label>
+        <input type="text" id="complex-radius" class="small" value="2">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('complex')">evaluate</button>
+    <div class="result" id="complex-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('complex-expr','1/(z^2+1)'); setEx('complex-re','0'); setEx('complex-im','1')">Res(1/(z²+1), i)</span>
+      <span class="ex" onclick="setEx('complex-expr','exp(z)/z'); document.getElementById('complex-type').value='contour'; toggleComplex()">∮ eᶻ/z dz over |z|=2</span>
+    </div>
+    <div class="hint">Evaluates residues at simple poles or contour integrals over circular paths.</div>
+  </div>
+
+  <div class="panel" id="fourier">
+    <div class="field-row">
+      <div class="field">
+        <label>f(t) =</label>
+        <input type="text" id="fourier-expr" value="exp(-2*abs(t))" oninput="livePreview('fourier-expr','fourier-preview')">
+        <div class="math-preview" id="fourier-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Time Var</label>
+        <input type="text" id="fourier-t" class="small" value="t">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>Freq Var</label>
+        <input type="text" id="fourier-w" class="small" value="w">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('fourier')">Fourier Transform</button>
+    <div class="result" id="fourier-result"></div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('fourier-expr','1')">1</span>
+      <span class="ex" onclick="setEx('fourier-expr','cos(3*t)')">cos(3t)</span>
+      <span class="ex" onclick="setEx('fourier-expr','exp(-2*abs(t))')">e^(-2|t|)</span>
+    </div>
+    <div class="hint">Basic symbolic continuous Fourier Transforms ℱ{f(t)} = F(ω).</div>
+  </div>
+
+  <div class="panel" id="graph">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="graph-expr" value="sin(x)" oninput="livePreview('graph-expr','graph-preview')">
+        <div class="math-preview" id="graph-preview"></div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:0;">
+        <label>x min</label>
+        <input type="text" id="graph-xmin" class="small" value="-10">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>x max</label>
+        <input type="text" id="graph-xmax" class="small" value="10">
+      </div>
+      <div class="field" style="flex:0;">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="graph-show-deriv" style="width:auto;"> Show f'(x)
+        </label>
+      </div>
+      <div class="field" style="flex:0;">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="graph-show-area" style="width:auto;"> Shade ∫ₐᵇ
+        </label>
+      </div>
+    </div>
+    <div class="field-row" id="graph-area-row" style="display:none;">
+      <div class="field" style="flex:0;">
+        <label>a</label>
+        <input type="text" id="graph-area-a" class="small" value="0">
+      </div>
+      <div class="field" style="flex:0;">
+        <label>b</label>
+        <input type="text" id="graph-area-b" class="small" value="3.14159">
+      </div>
+    </div>
+    <button class="runbtn" onclick="plotGraph()">plot</button>
+    <div class="graph-container" id="graph-container">
+      <canvas id="graph-canvas"></canvas>
+    </div>
+    <div class="graph-controls">
+      <button onclick="graphZoom(1.5)">zoom in</button>
+      <button onclick="graphZoom(0.67)">zoom out</button>
+      <button onclick="graphReset()">reset</button>
+      <div class="graph-info" id="graph-info"></div>
+    </div>
+    <div class="examples">
+      <span class="ex" onclick="setEx('graph-expr','sin(x)')">sin(x)</span>
+      <span class="ex" onclick="setEx('graph-expr','x^3 - 3*x')">x³ − 3x</span>
+      <span class="ex" onclick="setEx('graph-expr','exp(-x^2)')">e^(-x²)</span>
+      <span class="ex" onclick="setEx('graph-expr','tan(x)')">tan(x)</span>
+      <span class="ex" onclick="setEx('graph-expr','1/(1+x^2)')">1/(1+x²)</span>
+    </div>
+  </div>
+
+  <div class="panel" id="eval">
+    <div class="field-row">
+      <div class="field">
+        <label>f(x) =</label>
+        <input type="text" id="eval-expr" value="sin(x)*x^2" oninput="livePreview('eval-expr','eval-preview')">
+        <div class="math-preview" id="eval-preview"></div>
+      </div>
+      <div class="field" style="flex:0;">
+        <label>x =</label>
+        <input type="text" id="eval-x" class="small" value="1.5">
+      </div>
+    </div>
+    <button class="runbtn" onclick="run('eval')">= ?</button>
+    <div class="result" id="eval-result"></div>
+    <div class="hint">Plugs the number straight into the expression and evaluates it numerically.</div>
+  </div>
+</div>
+
+<footer>
+  <span>&copy; 2026 Anshuman</span>
+  <span>&middot;</span>
+  <a href="https://github.com/AnshumanJ28" target="_blank" title="GitHub Profile">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+  </a>
+</footer>
+
+<script>
+
+const panels = document.querySelectorAll('.panel');
+const navBtns = document.querySelectorAll('nav button');
+navBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    navBtns.forEach(b => b.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel).classList.add('active');
+  });
+});
+
+function setEx(id, val) {
+  document.getElementById(id).value = val;
+
+  const previewId = id.replace('-expr', '-preview').replace('-point', '-preview');
+  if (id.endsWith('-expr')) {
+    livePreview(id, id.replace('-expr', '-preview'));
+  }
+}
+
+let previewTimers = {};
+function livePreview(inputId, previewId) {
+  const el = document.getElementById(previewId);
+  if (!el) return;
+  clearTimeout(previewTimers[inputId]);
+  previewTimers[inputId] = setTimeout(() => {
+    const raw = document.getElementById(inputId).value.trim();
+    if (!raw) { el.innerHTML = ''; return; }
+
+    fetch('/api/to_latex', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({expr: raw})
+    }).then(r => r.json()).then(data => {
+      if (data.ok && data.latex) {
+        try { katex.render(data.latex, el, {throwOnError:false, displayMode:false}); }
+        catch(e) { el.textContent = raw; }
+      } else { el.textContent = raw; }
+    }).catch(() => { el.textContent = raw; });
+  }, 300);
+}
+
+function toggleIntegLimits() {
+  const type = document.getElementById('integ-type').value;
+  document.getElementById('integ-limits-row').style.display = type === 'definite' ? 'flex' : 'none';
+}
+
+function updateDiffBtn() {
+  const order = parseInt(document.getElementById('diff-order').value) || 1;
+  const v = document.getElementById('diff-var').value || 'x';
+  const btn = document.getElementById('diff-btn');
+  if (order === 1) btn.textContent = 'd/d' + v;
+  else if (order === 2) btn.textContent = 'd²/d' + v + '²';
+  else if (order === 3) btn.textContent = 'd³/d' + v + '³';
+}
+
+function updateIntegBtn() {
+  const order = parseInt(document.getElementById('integ-order').value) || 1;
+  const v = document.getElementById('integ-var').value || 'x';
+  const btn = document.getElementById('integ-btn');
+  if (order === 1) btn.textContent = '∫ d' + v;
+  else if (order === 2) btn.textContent = '∫∫ d' + v + '²';
+  else if (order === 3) btn.textContent = '∫∫∫ d' + v + '³';
+}
+
+function toggleVectorInputs() {
+  const op = document.getElementById('vec-op').value;
+  const scalarRow = document.getElementById('vec-scalar-row');
+  const vectorRows = document.getElementById('vec-vector-rows');
+  const pathRow = document.getElementById('vec-path-row');
+  const p2Col1 = document.getElementById('vec-p2-col-1');
+  const p2Col2 = document.getElementById('vec-p2-col-2');
+  const p2Col3 = document.getElementById('vec-p2-col-3');
+  
+  if (op === 'gradient' || op === 'laplacian') {
+    scalarRow.style.display = 'flex';
+    vectorRows.style.display = 'none';
+    pathRow.style.display = 'none';
+  } else if (op === 'line_integral' || op === 'surface_integral') {
+    scalarRow.style.display = 'none';
+    vectorRows.style.display = 'block';
+    pathRow.style.display = 'block';
+    if (op === 'line_integral') {
+      p2Col1.style.display = 'none'; p2Col2.style.display = 'none'; p2Col3.style.display = 'none';
+    } else {
+      p2Col1.style.display = 'block'; p2Col2.style.display = 'block'; p2Col3.style.display = 'block';
+    }
+  } else {
+    scalarRow.style.display = 'none';
+    vectorRows.style.display = 'block';
+    pathRow.style.display = 'none';
+  }
+}
+
+function setVecEx(op, scalar, fx, fy, fz) {
+  document.getElementById('vec-op').value = op;
+  toggleVectorInputs();
+  if (scalar) document.getElementById('vec-scalar-expr').value = scalar;
+  if (fx !== undefined) document.getElementById('vec-fx').value = fx || '';
+  if (fy !== undefined) document.getElementById('vec-fy').value = fy || '';
+  if (fz !== undefined) document.getElementById('vec-fz').value = fz || '';
+}
+
+document.getElementById('graph-show-area').addEventListener('change', function() {
+  document.getElementById('graph-area-row').style.display = this.checked ? 'flex' : 'none';
+});
+
+function toggleODEType() {
+  const type = document.getElementById('ode-type').value;
+  if (type === '1') {
+    document.getElementById('ode-1st-row').style.display = 'flex';
+    document.getElementById('ode-2nd-row').style.display = 'none';
+    document.getElementById('ode-v0-col').style.display = 'none';
+  } else {
+    document.getElementById('ode-1st-row').style.display = 'none';
+    document.getElementById('ode-2nd-row').style.display = 'flex';
+    document.getElementById('ode-v0-col').style.display = 'block';
+  }
+}
+
+function toggleLaplace() {
+  const type = document.getElementById('laplace-type').value;
+  if (type === 'forward') {
+    document.getElementById('laplace-label').textContent = 'f(t) =';
+    document.getElementById('laplace-ex-fwd').style.display = 'flex';
+    document.getElementById('laplace-ex-inv').style.display = 'none';
+  } else {
+    document.getElementById('laplace-label').textContent = 'F(s) =';
+    document.getElementById('laplace-ex-fwd').style.display = 'none';
+    document.getElementById('laplace-ex-inv').style.display = 'flex';
+  }
+}
+
+function toggleComplex() {
+  const type = document.getElementById('complex-type').value;
+  if (type === 'residue') {
+    document.getElementById('complex-residue-row').style.display = 'flex';
+    document.getElementById('complex-contour-row').style.display = 'none';
+  } else {
+    document.getElementById('complex-residue-row').style.display = 'none';
+    document.getElementById('complex-contour-row').style.display = 'flex';
+  }
+}
+
+let currentSystemSize = 2;
+function setSystemSize(size) {
+  currentSystemSize = size;
+  document.querySelectorAll('.szbtn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('size-' + size).classList.add('active');
+  const varInput = document.getElementById('system-vars');
+  if (size === 2) varInput.value = 'x, y';
+  else if (size === 3) varInput.value = 'x, y, z';
+  else if (size === 4) varInput.value = 'x, y, z, w';
+  updateSystemInputs();
+}
+
+function updateSystemInputs() {
+  const container = document.getElementById('system-eqs-container');
+  container.innerHTML = '';
+  const defaults = {
+    2: ['x + y = 3', 'x - y = 1'],
+    3: ['x + y + z = 6', '2*y + 5*z = -4', '2*x + 5*y - z = 27'],
+    4: ['x+y+z+w=10', 'x-y+z-w=2', '2*x+y-z+3*w=17', '3*x-2*y+2*z-w=5']
+  };
+  const eqList = defaults[currentSystemSize] || [];
+  for (let i = 0; i < currentSystemSize; i++) {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `<div class="field"><label>Equation ${i+1}</label><input type="text" class="system-eq-input" id="sys-eq-${i}" value="${eqList[i] || ''}"></div>`;
+    container.appendChild(row);
+  }
+}
+
+function loadSystemExample(size, eqs, vars) {
+  currentSystemSize = size;
+  document.querySelectorAll('.szbtn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('size-' + size).classList.add('active');
+  document.getElementById('system-vars').value = vars;
+  const container = document.getElementById('system-eqs-container');
+  container.innerHTML = '';
+  for (let i = 0; i < size; i++) {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `<div class="field"><label>Equation ${i+1}</label><input type="text" class="system-eq-input" id="sys-eq-${i}" value="${eqs[i] || ''}"></div>`;
+    container.appendChild(row);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setSystemSize(2);
+
+  setTimeout(() => {
+    livePreview('diff-expr', 'diff-preview');
+    livePreview('integ-expr', 'integ-preview');
+  }, 500);
+});
+
+function val(id) { return document.getElementById(id).value; }
+
+async function run(kind) {
+  const resultEl = document.getElementById(kind + '-result');
+  resultEl.className = 'result show';
+  resultEl.innerHTML = '<span class="tag">computing…</span>working it out';
+
+  let url, body;
+
+  if (kind === 'diff') {
+    const mixedStr = val('diff-mixed').trim();
+    const vars = mixedStr ? mixedStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    url = '/api/differentiate';
+    body = { expr: val('diff-expr'), var: val('diff-var'), order: parseInt(val('diff-order')), vars: vars };
+  } else if (kind === 'integ') {
+    const type = val('integ-type');
+    const order = parseInt(val('integ-order')) || 1;
+    const mixedStr = val('integ-mixed').trim();
+    const vars = mixedStr ? mixedStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    
+    if (vars.length > 0) {
+      url = '/api/multi_integral';
+      let specs = vars.map(v => ({ var: v }));
+      body = { expr: val('integ-expr'), specs: specs };
+    } else if (type === 'definite') {
+      url = '/api/definite_integral';
+      body = { expr: val('integ-expr'), var: val('integ-var'), lower: parseFloat(val('integ-lower')), upper: parseFloat(val('integ-upper')) };
+    } else {
+      url = '/api/integrate';
+      body = { expr: val('integ-expr'), var: val('integ-var'), order: order };
+    }
+  } else if (kind === 'lim') {
+    url = '/api/limit';
+    body = { expr: val('lim-expr'), var: val('lim-var'), point: val('lim-point') };
+  } else if (kind === 'solve') {
+    url = '/api/solve';
+    body = { expr: val('solve-expr'), var: val('solve-var') };
+  } else if (kind === 'eval') {
+    url = '/api/evaluate';
+    body = { expr: val('eval-expr'), values: { x: val('eval-x') } };
+  } else if (kind === 'system') {
+    url = '/api/solve_system';
+    const eqs = [];
+    for (let i = 0; i < currentSystemSize; i++) eqs.push(val('sys-eq-' + i));
+    const varStr = val('system-vars') || '';
+    const vars = varStr.split(',').map(s => s.trim()).filter(Boolean);
+    body = { equations: eqs, variables: vars };
+  } else if (kind === 'vector') {
+    url = '/api/vector_calc';
+    const op = val('vec-op');
+    const varsStr = val('vec-vars').split(',').map(s => s.trim()).filter(Boolean);
+    if (op === 'gradient' || op === 'laplacian') {
+      body = { op, scalar_expr: val('vec-scalar-expr'), vector_exprs: [], vars: varsStr };
+    } else if (op === 'line_integral') {
+      url = '/api/line_integral';
+      body = { F_exprs: [val('vec-fx'), val('vec-fy'), val('vec-fz')],
+               path_exprs: [val('vec-px'), val('vec-py'), val('vec-pz')], t_var: val('vec-p1-var'),
+               t_start: parseFloat(val('vec-p1-start')), t_end: parseFloat(val('vec-p1-end')) };
+    } else if (op === 'surface_integral') {
+      url = '/api/surface_integral';
+      body = { F_exprs: [val('vec-fx'), val('vec-fy'), val('vec-fz')],
+               surface_exprs: [val('vec-px'), val('vec-py'), val('vec-pz')], uv_vars: [val('vec-p1-var'), val('vec-p2-var')],
+               u_start: parseFloat(val('vec-p1-start')), u_end: parseFloat(val('vec-p1-end')),
+               v_start: parseFloat(val('vec-p2-start')), v_end: parseFloat(val('vec-p2-end')) };
+    } else {
+      body = { op, scalar_expr: '', vector_exprs: [val('vec-fx'), val('vec-fy'), val('vec-fz')], vars: varsStr };
+    }
+  } else if (kind === 'ode') {
+    const type = val('ode-type');
+    if (type === '1') {
+      url = '/api/solve_ode';
+      body = { expr: val('ode-expr'), x0: parseFloat(val('ode-x0')), y0: parseFloat(val('ode-y0')),
+               xmin: parseFloat(val('ode-xmin')), xmax: parseFloat(val('ode-xmax')), steps: 500 };
+    } else {
+      url = '/api/solve_ode2';
+      body = { a: parseFloat(val('ode-a')), b: parseFloat(val('ode-b')), c: parseFloat(val('ode-c')),
+               expr: val('ode-expr2'), x0: parseFloat(val('ode-x0')), y0: parseFloat(val('ode-y0')), v0: parseFloat(val('ode-v0')),
+               xmin: parseFloat(val('ode-xmin')), xmax: parseFloat(val('ode-xmax')), steps: 500 };
+    }
+  } else if (kind === 'series') {
+    url = '/api/taylor_series';
+    body = { expr: val('series-expr'), var: 'x', a: parseFloat(val('series-a')), terms: parseInt(val('series-terms')) };
+  } else if (kind === 'laplace') {
+    const type = val('laplace-type');
+    if (type === 'forward') {
+      url = '/api/laplace';
+      body = { expr: val('laplace-expr'), t_var: 't', s_var: 's' };
+    } else {
+      url = '/api/inv_laplace';
+      body = { expr: val('laplace-expr'), s_var: 's', t_var: 't' };
+    }
+  } else if (kind === 'complex') {
+    const type = val('complex-type');
+    if (type === 'residue') {
+      url = '/api/complex_residue';
+      body = { expr: val('complex-expr'), var: val('complex-var'), real_part: parseFloat(val('complex-re')), imag_part: parseFloat(val('complex-im')) };
+    } else {
+      url = '/api/complex_contour';
+      body = { expr: val('complex-expr'), var: val('complex-var'), cx: parseFloat(val('complex-cx')), cy: parseFloat(val('complex-cy')), radius: parseFloat(val('complex-radius')) };
+    }
+  } else if (kind === 'fourier') {
+    url = '/api/fourier';
+    body = { expr: val('fourier-expr'), t_var: val('fourier-t'), w_var: val('fourier-w') };
+  }
+
+  try {
+    const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    render(kind, data);
+  } catch (e) {
+    resultEl.className = 'result show err';
+    resultEl.innerHTML = '<span class="tag errtag">error</span>Could not reach the server.';
+  }
+}
+
+function renderMathResult(resultEl, tagText, data) {
+  resultEl.className = 'result show';
+  const latex = data.latex || '';
+  const plain = data.result || '';
+
+  let html = `<span class="tag">${tagText}</span>`;
+  html += `<div class="math-output" id="math-${Date.now()}"></div>`;
+  html += `<div class="plain-output">${plain}</div>`;
+  html += `<div class="copy-btns">
+    <button class="copy-btn" onclick="copyText('${plain.replace(/'/g, "\\'")}')">copy text</button>
+    <button class="copy-btn" onclick="copyText('${latex.replace(/'/g, "\\'")}')">copy LaTeX</button>
+  </div>`;
+  resultEl.innerHTML = html;
+
+  if (latex) {
+    const mathEl = resultEl.querySelector('.math-output');
+    try { katex.render(latex, mathEl, {throwOnError: false, displayMode: true}); }
+    catch(e) { mathEl.textContent = plain; }
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function render(kind, data) {
+  const resultEl = document.getElementById(kind + '-result');
+
+  if (kind === 'solve') {
+    if (data.ok) {
+      resultEl.className = 'result show';
+      const v = val('solve-var');
+      if (data.roots && data.roots.length) {
+        const latexRoots = data.latex_roots || data.roots;
+        const latexStr = latexRoots.map(r => v + ' = ' + r).join(',\\quad ');
+        const plainStr = data.roots.map(r => v + ' = ' + r).join('   ');
+        let html = `<span class="tag">solutions</span>`;
+        html += `<div class="math-output" id="math-solve"></div>`;
+        html += `<div class="plain-output">${plainStr}</div>`;
+        html += `<div class="copy-btns"><button class="copy-btn" onclick="copyText('${plainStr}')">copy text</button></div>`;
+        resultEl.innerHTML = html;
+        try { katex.render(latexStr, document.getElementById('math-solve'), {throwOnError:false, displayMode:true}); } catch(e) {}
+      } else {
+        resultEl.innerHTML = '<span class="tag">result</span>' + data.message;
+      }
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">no solution found</span>' + data.message;
+    }
+    return;
+  }
+
+  if (kind === 'eval') {
+    if (data.ok) {
+      resultEl.className = 'result show';
+      let html = `<span class="tag">= </span>`;
+      html += `<div class="math-output" id="math-eval"></div>`;
+      resultEl.innerHTML = html;
+      try { katex.render(String(data.result), document.getElementById('math-eval'), {throwOnError:false, displayMode:true}); } catch(e) { document.getElementById('math-eval').textContent = data.result; }
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.error || 'could not evaluate');
+    }
+    return;
+  }
+
+  if (kind === 'system') {
+    if (data.ok) {
+      resultEl.className = 'result show';
+      const solParts = [];
+      const latexParts = [];
+      for (const [varName, value] of Object.entries(data.solution)) {
+        const formatted = Math.abs(value - Math.round(value)) < 1e-9 ? Math.round(value) : Number(value.toFixed(10));
+        solParts.push(varName + ' = ' + formatted);
+        latexParts.push(varName + ' = ' + formatted);
+      }
+      const latexStr = '\\begin{cases} ' + latexParts.join(' \\\\ ') + ' \\end{cases}';
+      let html = `<span class="tag">solutions</span>`;
+      html += `<div class="math-output" id="math-system"></div>`;
+      html += `<div class="plain-output">${solParts.join('   ')}</div>`;
+      resultEl.innerHTML = html;
+      try { katex.render(latexStr, document.getElementById('math-system'), {throwOnError:false, displayMode:true}); } catch(e) {}
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.message || 'could not solve system');
+    }
+    return;
+  }
+
+  if (kind === 'vector') {
+    if (data.ok) {
+      resultEl.className = 'result show';
+      const op = val('vec-op');
+      let latex = '', plain = '';
+      if (op === 'line_integral' || op === 'surface_integral') {
+        const val = Number(data.result.toFixed(6));
+        latex = String(val);
+        plain = String(val);
+      } else if (op === 'gradient' || op === 'curl') {
+        const lc = data.latex_components || data.components;
+        const c = data.components;
+        latex = '\\begin{pmatrix} ' + lc.join(' \\\\ ') + ' \\end{pmatrix}';
+        plain = '⟨' + c.join(', ') + '⟩';
+      } else {
+        latex = data.latex_scalar || data.scalar;
+        plain = data.scalar;
+      }
+      const tagText = op === 'gradient' ? '∇f' : op === 'divergence' ? '∇·F' : op === 'curl' ? '∇×F' : op === 'laplacian' ? '∇²f' : 'integral';
+      let html = `<span class="tag">${tagText}</span>`;
+      html += `<div class="math-output" id="math-vector"></div>`;
+      html += `<div class="plain-output">${plain}</div>`;
+      html += `<div class="copy-btns"><button class="copy-btn" onclick="copyText('${latex.replace(/'/g, "\\'")}')">copy LaTeX</button></div>`;
+      resultEl.innerHTML = html;
+      try { katex.render(latex, document.getElementById('math-vector'), {throwOnError:false, displayMode:true}); } catch(e) {}
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.message || 'computation failed');
+    }
+    return;
+  }
+
+  if (kind === 'ode') {
+    if (data.ok) {
+      resultEl.className = 'result show';
+      let html = '';
+      if (data.symbolic_ok) {
+        html += `<span class="tag">symbolic solution (${data.method})</span>`;
+        html += `<div class="math-output" id="math-ode"></div>`;
+        html += `<div class="plain-output">${data.symbolic_solution}</div>`;
+      } else {
+        html += `<span class="tag">numerical solution (RK4)</span>`;
+        html += `<div style="font-size:13px;color:var(--chalk-dim);">${data.symbolic_message || 'No closed-form found. See trajectory plot below.'}</div>`;
+      }
+      resultEl.innerHTML = html;
+      if (data.symbolic_ok && data.latex_solution) {
+        try { katex.render(data.latex_solution, document.getElementById('math-ode'), {throwOnError:false, displayMode:true}); } catch(e) {}
+      }
+
+      if (data.trajectory_ok || data.slope_field_ok) {
+        document.getElementById('ode-graph-container').style.display = 'block';
+        drawODEGraph(data);
+      }
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.message || 'could not solve ODE');
+    }
+    return;
+  }
+
+  if (kind === 'series' || kind === 'laplace' || kind === 'complex' || kind === 'fourier') {
+    if (data.ok) {
+      let tagText = '';
+      if (kind === 'series') tagText = 'taylor polynomial';
+      else if (kind === 'laplace') tagText = val('laplace-type') === 'forward' ? 'F(s) / ' + data.method : 'f(t) / ' + data.method;
+      else if (kind === 'complex') {
+        tagText = 'complex result';
+        if (data.real !== undefined && data.imag !== undefined) {
+          let re = data.real, im = data.imag;
+          let resStr = '';
+          if (Math.abs(re) > 1e-9) resStr += (Math.abs(re - Math.round(re)) < 1e-9 ? Math.round(re) : Number(re.toFixed(6)));
+          if (Math.abs(im) > 1e-9) {
+            if (im > 0 && resStr !== '') resStr += ' + ';
+            else if (im < 0 && resStr !== '') { resStr += ' - '; im = -im; }
+            else if (im < 0) { resStr += '-'; im = -im; }
+            let imStr = (Math.abs(im - Math.round(im)) < 1e-9 ? Math.round(im) : Number(im.toFixed(6)));
+            if (imStr === 1) imStr = '';
+            resStr += imStr + 'i';
+          }
+          if (resStr === '') resStr = '0';
+          data.result = resStr;
+          data.latex = resStr;
+        }
+      }
+      else if (kind === 'fourier') tagText = 'fourier transform';
+      
+      renderMathResult(resultEl, tagText, data);
+    } else {
+      resultEl.className = 'result show err';
+      resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.message || 'computation failed');
+    }
+    return;
+  }
+
+  if (data.ok) {
+    let tagText = 'limit';
+    if (kind === 'diff') {
+      const mixedStr = val('diff-mixed').trim();
+      if (mixedStr) {
+        tagText = 'mixed partial derivative';
+      } else {
+        const order = parseInt(val('diff-order')) || 1;
+        tagText = order === 1 ? 'derivative' : order === 2 ? '2nd derivative' : '3rd derivative';
+      }
+    } else if (kind === 'integ') {
+      const mixedStr = val('integ-mixed').trim();
+      if (mixedStr) {
+        tagText = 'multiple integral';
+      } else {
+        const order = parseInt(val('integ-order')) || 1;
+        tagText = order === 1 ? 'antiderivative' : order === 2 ? '2nd antiderivative' : '3rd antiderivative';
+      }
+    }
+    renderMathResult(resultEl, tagText, data);
+  } else {
+    resultEl.className = 'result show err';
+    resultEl.innerHTML = '<span class="tag errtag">error</span>' + (data.result || data.message || 'computation failed');
+  }
+}
+
+function drawODEGraph(data) {
+  const canvas = document.getElementById('ode-canvas');
+  const container = document.getElementById('ode-graph-container');
+  canvas.width = container.clientWidth * 2;
+  canvas.height = container.clientHeight * 2;
+  canvas.style.width = container.clientWidth + 'px';
+  canvas.style.height = container.clientHeight + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  let xmin = -5, xmax = 5, ymin = -5, ymax = 5;
+  if (data.trajectory && data.trajectory.length > 0) {
+    const finPts = data.trajectory.filter(pt => isFinite(pt[0]) && isFinite(pt[1]) && Math.abs(pt[1]) < 1e8);
+    if (finPts.length > 1) {
+      xmin = Infinity; xmax = -Infinity; ymin = Infinity; ymax = -Infinity;
+      for (const pt of finPts) {
+        if (pt[0] < xmin) xmin = pt[0]; if (pt[0] > xmax) xmax = pt[0];
+        if (pt[1] < ymin) ymin = pt[1]; if (pt[1] > ymax) ymax = pt[1];
+      }
+      if (ymax - ymin < 0.01) { ymin -= 1; ymax += 1; }
+      if (xmax - xmin < 0.01) { xmin -= 1; xmax += 1; }
+      const padX = Math.max((xmax - xmin) * 0.15, 0.5);
+      const padY = Math.max((ymax - ymin) * 0.15, 0.5);
+      xmin -= padX; xmax += padX; ymin -= padY; ymax += padY;
+    }
+  }
+
+  const toX = x => (x - xmin) / (xmax - xmin) * W;
+  const toY = y => H - (y - ymin) / (ymax - ymin) * H;
+
+  ctx.fillStyle = '#0e1712';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(238,242,234,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let x = Math.ceil(xmin); x <= xmax; x++) { ctx.beginPath(); ctx.moveTo(toX(x), 0); ctx.lineTo(toX(x), H); ctx.stroke(); }
+  for (let y = Math.ceil(ymin); y <= ymax; y++) { ctx.beginPath(); ctx.moveTo(0, toY(y)); ctx.lineTo(W, toY(y)); ctx.stroke(); }
+
+  ctx.strokeStyle = 'rgba(238,242,234,0.25)';
+  ctx.lineWidth = 1;
+  if (ymin <= 0 && ymax >= 0) { ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(W, toY(0)); ctx.stroke(); }
+  if (xmin <= 0 && xmax >= 0) { ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), H); ctx.stroke(); }
+
+  if (data.slope_field && data.slope_field.length > 0) {
+    ctx.strokeStyle = 'rgba(127,179,201,0.35)';
+    ctx.lineWidth = 1;
+    const tickLen = Math.min(W, H) / 50;
+    for (const pt of data.slope_field) {
+      const cx = toX(pt.x);
+      const cy = toY(pt.y);
+      const angle = Math.atan(pt.slope);
+      const dx = Math.cos(angle) * tickLen;
+      const dy = -Math.sin(angle) * tickLen;
+      ctx.beginPath();
+      ctx.moveTo(cx - dx, cy - dy);
+      ctx.lineTo(cx + dx, cy + dy);
+      ctx.stroke();
+    }
+  }
+
+  if (data.trajectory && data.trajectory.length > 1) {
+    ctx.strokeStyle = '#e8c766';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    let drawing = false;
+    for (let i = 0; i < data.trajectory.length; i++) {
+      const px = data.trajectory[i][0];
+      const py = data.trajectory[i][1];
+      if (!isFinite(px) || !isFinite(py) || Math.abs(py) > 1e8) {
+        drawing = false;
+        continue;
+      }
+      if (!drawing) {
+        ctx.moveTo(toX(px), toY(py));
+        drawing = true;
+      } else {
+        ctx.lineTo(toX(px), toY(py));
+      }
+    }
+    ctx.stroke();
+  }
+
+  const x0 = parseFloat(val('ode-x0'));
+  const y0 = parseFloat(val('ode-y0'));
+  ctx.fillStyle = '#e08a6f';
+  ctx.beginPath();
+  ctx.arc(toX(x0), toY(y0), 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(238,242,234,0.5)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText('x', W - 14, toY(0) - 6);
+  ctx.fillText('y', toX(0) + 6, 14);
+}
+
+let graphState = { xmin: -10, xmax: 10, ymin: -5, ymax: 5, data: null };
+
+async function plotGraph() {
+  const expr = val('graph-expr');
+  const xmin = parseFloat(val('graph-xmin'));
+  const xmax = parseFloat(val('graph-xmax'));
+  const showDeriv = document.getElementById('graph-show-deriv').checked;
+  const showArea = document.getElementById('graph-show-area').checked;
+
+  const exprs = [expr];
+
+  let derivData = null;
+  if (showDeriv) {
+    try {
+      const dRes = await fetch('/api/differentiate', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({expr, var: 'x', order: 1, vars: []})
+      });
+      const dData = await dRes.json();
+      if (dData.ok) exprs.push(dData.result);
+    } catch(e) {}
+  }
+
+  let areaValue = null;
+  if (showArea) {
+    const areaA = parseFloat(val('graph-area-a'));
+    const areaB = parseFloat(val('graph-area-b'));
+    try {
+      const aRes = await fetch('/api/definite_integral', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({expr, var: 'x', lower: areaA, upper: areaB})
+      });
+      const aData = await aRes.json();
+      if (aData.ok) areaValue = aData.value;
+    } catch(e) {}
+  }
+
+  try {
+    const res = await fetch('/api/batch_evaluate', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({exprs, var: 'x', xmin, xmax, steps: 600})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      graphState.xmin = xmin;
+      graphState.xmax = xmax;
+      graphState.data = data;
+      graphState.areaValue = areaValue;
+      graphState.areaA = showArea ? parseFloat(val('graph-area-a')) : null;
+      graphState.areaB = showArea ? parseFloat(val('graph-area-b')) : null;
+      drawGraph();
+    }
+  } catch(e) {}
+}
+
+function drawGraph() {
+  const data = graphState.data;
+  if (!data || !data.series || data.series.length === 0) return;
+
+  const canvas = document.getElementById('graph-canvas');
+  const container = document.getElementById('graph-container');
+  canvas.width = container.clientWidth * 2;
+  canvas.height = container.clientHeight * 2;
+  canvas.style.width = container.clientWidth + 'px';
+  canvas.style.height = container.clientHeight + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  let ymin = Infinity, ymax = -Infinity;
+  for (const s of data.series) {
+    for (const pt of s.points) {
+      if (Math.abs(pt[1]) < 1e6) {
+        if (pt[1] < ymin) ymin = pt[1];
+        if (pt[1] > ymax) ymax = pt[1];
+      }
+    }
+  }
+  const ypad = Math.max((ymax - ymin) * 0.1, 0.5);
+  ymin -= ypad; ymax += ypad;
+  graphState.ymin = ymin; graphState.ymax = ymax;
+
+  const xmin = graphState.xmin, xmax = graphState.xmax;
+  const toX = x => (x - xmin) / (xmax - xmin) * W;
+  const toY = y => H - (y - ymin) / (ymax - ymin) * H;
+
+  ctx.fillStyle = '#0e1712';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(238,242,234,0.06)';
+  ctx.lineWidth = 0.5;
+  const xStep = Math.pow(10, Math.floor(Math.log10(Math.max(xmax - xmin, 1))) - 1) * 2;
+  const yStep = Math.pow(10, Math.floor(Math.log10(Math.max(ymax - ymin, 1))) - 1) * 2;
+  for (let x = Math.ceil(xmin / xStep) * xStep; x <= xmax; x += xStep) {
+    ctx.beginPath(); ctx.moveTo(toX(x), 0); ctx.lineTo(toX(x), H); ctx.stroke();
+  }
+  for (let y = Math.ceil(ymin / yStep) * yStep; y <= ymax; y += yStep) {
+    ctx.beginPath(); ctx.moveTo(0, toY(y)); ctx.lineTo(W, toY(y)); ctx.stroke();
+  }
+
+  ctx.strokeStyle = 'rgba(238,242,234,0.3)';
+  ctx.lineWidth = 1;
+  if (ymin <= 0 && ymax >= 0) { ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(W, toY(0)); ctx.stroke(); }
+  if (xmin <= 0 && xmax >= 0) { ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), H); ctx.stroke(); }
+
+  ctx.fillStyle = 'rgba(238,242,234,0.4)';
+  ctx.font = '10px JetBrains Mono';
+  for (let x = Math.ceil(xmin / xStep) * xStep; x <= xmax; x += xStep) {
+    if (Math.abs(x) > 0.01) ctx.fillText(x.toFixed(1), toX(x) + 2, toY(0) + 12);
+  }
+  for (let y = Math.ceil(ymin / yStep) * yStep; y <= ymax; y += yStep) {
+    if (Math.abs(y) > 0.01) ctx.fillText(y.toFixed(1), toX(0) + 4, toY(y) - 4);
+  }
+
+  if (graphState.areaA !== null && graphState.areaB !== null && data.series[0]) {
+    const pts = data.series[0].points;
+    ctx.fillStyle = 'rgba(143, 191, 138, 0.2)';
+    ctx.beginPath();
+    let started = false;
+    for (const pt of pts) {
+      if (pt[0] >= graphState.areaA && pt[0] <= graphState.areaB) {
+        if (!started) { ctx.moveTo(toX(pt[0]), toY(0)); started = true; }
+        ctx.lineTo(toX(pt[0]), toY(pt[1]));
+      }
+    }
+    if (started) {
+      ctx.lineTo(toX(graphState.areaB), toY(0));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (graphState.areaValue !== null) {
+      ctx.fillStyle = 'rgba(143,191,138,0.8)';
+      ctx.font = '12px JetBrains Mono';
+      const midX = (graphState.areaA + graphState.areaB) / 2;
+      ctx.fillText('Area ≈ ' + graphState.areaValue.toFixed(6), toX(midX) - 40, toY(0) - 10);
+    }
+  }
+
+  const colors = ['#e8c766', '#e08a6f', '#7fb3c9', '#8fbf8a'];
+  const labels = ['f(x)', "f'(x)", "f''(x)"];
+  for (let si = 0; si < data.series.length; si++) {
+    const s = data.series[si];
+    if (s.points.length < 2) continue;
+    ctx.strokeStyle = colors[si % colors.length];
+    ctx.lineWidth = si === 0 ? 2.5 : 1.8;
+    ctx.beginPath();
+    let moved = false;
+    for (let i = 0; i < s.points.length; i++) {
+      const px = toX(s.points[i][0]);
+      const py = toY(s.points[i][1]);
+      if (py < -500 || py > H + 500) { moved = false; continue; }
+      if (!moved) { ctx.moveTo(px, py); moved = true; }
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = colors[si % colors.length];
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(labels[si] || s.name, 12, 20 + si * 18);
+  }
+}
+
+function graphZoom(factor) {
+  const cx = (graphState.xmin + graphState.xmax) / 2;
+  const hw = (graphState.xmax - graphState.xmin) / 2 / factor;
+  graphState.xmin = cx - hw;
+  graphState.xmax = cx + hw;
+  document.getElementById('graph-xmin').value = graphState.xmin.toFixed(2);
+  document.getElementById('graph-xmax').value = graphState.xmax.toFixed(2);
+  plotGraph();
+}
+
+function graphReset() {
+  graphState.xmin = -10; graphState.xmax = 10;
+  document.getElementById('graph-xmin').value = '-10';
+  document.getElementById('graph-xmax').value = '10';
+  plotGraph();
+}
+
+document.getElementById('graph-canvas').addEventListener('mousemove', function(e) {
+  if (!graphState.data) return;
+  const rect = this.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / rect.width;
+  const x = graphState.xmin + mx * (graphState.xmax - graphState.xmin);
+  const my = 1 - (e.clientY - rect.top) / rect.height;
+  const y = graphState.ymin + my * (graphState.ymax - graphState.ymin);
+  document.getElementById('graph-info').textContent = `x: ${x.toFixed(3)}, y: ${y.toFixed(3)}`;
+});
+
+function toggleInfo() {
+  const modal = document.getElementById('info-modal');
+  modal.classList.toggle('show');
+}
+</script>
+
+<div class="info-modal" id="info-modal" onclick="if(event.target===this) toggleInfo()">
+  <div class="info-content">
+    <button class="info-close" onclick="toggleInfo()">&times;</button>
+    <h2>Syntax Guide</h2>
+    <table>
+      <thead>
+        <tr><th>Syntax</th><th>Description</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>abs(x)</code></td><td>Absolute value |x|</td><td><code>abs(-5)</code></td></tr>
+        <tr><td><code>sqrt(x)</code></td><td>Square root &radic;x</td><td><code>sqrt(x^2+1)</code></td></tr>
+        <tr><td><code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Trigonometric functions</td><td><code>sin(pi/2)</code></td></tr>
+        <tr><td><code>asin(x)</code>, <code>acos(x)</code>, <code>atan(x)</code></td><td>Inverse trigonometric functions</td><td><code>atan(1)</code></td></tr>
+        <tr><td><code>ln(x)</code>, <code>log(x)</code></td><td>Natural logarithm / Base-10 log</td><td><code>ln(e^2)</code></td></tr>
+        <tr><td><code>exp(x)</code></td><td>Exponential e<sup>x</sup></td><td><code>exp(i*pi)</code></td></tr>
+        <tr><td><code>FresnelS(x)</code> or <code>S(x)</code><br><code>FresnelC(x)</code> or <code>C(x)</code></td><td>Fresnel Integrals S(x), C(x)</td><td><code>S(x)</code></td></tr>
+        <tr><td><code>erf(x)</code></td><td>Error function erf(x)</td><td><code>erf(x)</code></td></tr>
+        <tr><td><code>u_x</code>, <code>u_y</code></td><td>Partial derivative variables (for ODE/PDE)</td><td><code>u_x + u_y</code></td></tr>
+        <tr><td><code>pi</code>, <code>e</code>, <code>i</code></td><td>Math constants &pi;, e, i</td><td><code>e^(i*pi) + 1</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

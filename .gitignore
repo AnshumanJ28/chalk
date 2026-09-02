@@ -1,0 +1,17 @@
+# Build artifacts
+build/
+*.pyd
+*.so
+*.dll
+*.exe
+*.obj
+*.o
+*.lib
+*.exp
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
