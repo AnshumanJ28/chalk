@@ -1,0 +1,221 @@
+13: // ============================================================================
+14: // TECHNIQUE 6: Table-based Lookup Engine
+15: // Known integral patterns mapped to their antiderivatives.
+16: // ============================================================================
+22: // ∫ sec(x) dx = ln|sec(x) + tan(x)|
+32: // ∫ csc(x) dx = -ln|csc(x) + cot(x)|
+42: // ∫ cot(x) dx = ln|sin(x)|
+51: // ∫ sec^2(x) dx = tan(x)
+60: // ∫ csc^2(x) dx = -cot(x)
+69: // ∫ sec(x)*tan(x) dx = sec(x)
+88: // ∫ csc(x)*cot(x) dx = -csc(x)
+107: // ∫ sinh(x) dx = cosh(x), ∫ cosh(x) dx = sinh(x), ∫ tanh(x) dx = ln(cosh(x))
+130: // ∫ 1/sqrt(1-x^2) dx = asin(x) [handled via completing the square too]
+131: // ∫ 1/(1+x^2) dx = atan(x) [handled via completing the square too]
+137: // ============================================================================
+138: // TECHNIQUE 1: Partial Fraction Decomposition
+139: // Integrate rational functions p(x)/q(x) by decomposing into simpler fractions.
+140: // ============================================================================
+142: // Represents polynomial as vector of coefficients: {c0, c1, c2, ...} for c0 + c1*x + c2*x^2 + ...
+214: // Only if denominator is constant
+237: return -1; // zero polynomial
+247: if (dd < 0) return {dividend, {}}; // division by zero
+272: // Find real roots of a polynomial using companion matrix eigenvalue or brute-force for degree <= 3
+291: // For degree 3+, use Durand-Kerner method (simplified real-root finder)
+292: // Try rational root theorem: test factors of constant term / leading coefficient
+295: // Newton's method from multiple starting points
+305: // derivative
+315: // Round to integer if close
+318: // Deflate polynomial
+344: // Integrate a polynomial
+368: if (degD <= 0) return nullptr; // constant denominator, not interesting
+370: // If degree of numerator >= degree of denominator, do polynomial long division first
+380: // Remainder is zero
+385: // Find roots of denominator
+388: // Check if it's a quadratic with no real roots -> leads to atan
+393: // Complete the square: A(x + B/(2A))^2 + (C - B^2/(4A))
+394: // ∫ (px + q) / (Ax^2 + Bx + C) dx
+398: // Split: p/(2A) * ln|Ax^2+Bx+C| + (q - pB/(2A)) * (1/sqrt(AC - B^2/4)) * atan(...)
+401: // Part 1: coefficient of derivative matching
+402: // d/dx(Ax^2+Bx+C) = 2Ax + B
+403: // p*x + q = (p/(2A)) * (2Ax + B) + (q - pB/(2A))
+408: // ∫ matchCoeff * (2Ax+B)/(Ax^2+Bx+C) dx = matchCoeff * ln|Ax^2+Bx+C|
+414: // ∫ remainder_const / (Ax^2+Bx+C) dx
+415: // = remainder_const / A * ∫ 1/((x+B/(2A))^2 + (C/A - B^2/(4A^2))) dx
+418: // = remainder_const / A * (1/sqrt(k)) * atan((x+h)/sqrt(k))
+438: // Check we have all roots (all linear factors)
+439: // For simplicity, handle the case where we can fully factor into distinct linear factors
+441: // We don't have all roots. Try to handle partial factoring.
+442: // For now, if we have some roots, try partial fractions with what we have.
+443: // Factor out known roots and see if the remainder is a quadratic with no real roots.
+457: // We have: denom = (x-r1)(x-r2)...*remaining(x)
+458: // Set up partial fractions: N(x) / ((x-r1)(x-r2)...*R(x)) = A1/(x-r1) + A2/(x-r2) + ... + (Bx+C)/R(x)
+459: // Use the cover-up method for the linear factors
+462: if (totalUnknowns > 10) return nullptr; // too complex
+464: // For distinct linear factors, use Heaviside cover-up method
+469: // A_i = N(r_i) / product of (r_i - r_j) for j != i * remaining(r_i)
+478: // ∫ A_i / (x - r_i) dx = A_i * ln|x - r_i|
+484: // Handle the remaining quadratic part if needed
+486: // Subtract the linear partial fractions from the original and integrate the remainder
+487: // This is complex, so for now we skip if there's a non-trivial remainder
+488: // But handle the common case: degN <= numFactors + remDeg - 1
+489: // For now, just return what we have if remainder is constant
+491: // We need to find (Bx+C)/R(x) part.
+492: // N(x)/D(x) - sum(A_i/(x-r_i)) = (Bx+C)/R(x)
+493: // This requires solving a linear system, which is complex.
+494: // For the common case, we already handle it via the standard path.
+506: // All roots found - check for distinct roots (simpler case)
+507: // Remove duplicates and count multiplicities
+509: vector<pair<double, int>> rootMult; // (root, multiplicity)
+517: // For distinct linear factors only (multiplicity 1)
+524: // Heaviside cover-up method
+531: // Normalize by leading coefficient of denominator
+546: // Handle repeated roots: A/(x-r)^n -> integrate to A/(-n+1) * (x-r)^(-n+1) or A*ln|x-r|
+548: // Build the system: N(x)/D(x) = sum A_{i,k} / (x-r_i)^k
+549: // Use evaluation at multiple points to solve the linear system
+550: // For simplicity, use the derivative method for repeated roots.
+556: // Compute coefficient using limit method
+557: // A_{i,k} = lim_{x->r_i} (1/(mult-k)!) * d^(mult-k)/dx^(mult-k) [(x-r_i)^mult * N(x)/D(x)]
+558: // For k=mult (highest power), this is just N(r_i) / (D(x)/(x-r_i)^mult evaluated at r_i)
+560: // Build D(x) / (x-root)^mult
+574: // Multiply by leading coefficient
+594: // For k < mult, we would need to differentiate. Skip for now for complex cases.
+609: // ============================================================================
+610: // TECHNIQUE 2: Trigonometric Power Reduction
+611: // sin^n(x), cos^n(x) -> use reduction formulas and identities.
+612: // ============================================================================
+616: // Forward declaration for main integration function
+622: // sin^2(u) = (1 - cos(2u))/2
+627: // ∫ sin^2(ax+b) dx = x/2 - sin(2(ax+b))/(4a)
+634: // cos^2(u) = (1 + cos(2u))/2
+639: // ∫ cos^2(ax+b) dx = x/2 + sin(2(ax+b))/(4a)
+646: // tan^2(u) = sec^2(u) - 1 -> ∫ = tan(u)/a - x
+656: // sin(a)*cos(b) product-to-sum: sin(a)*cos(b) = [sin(a+b) + sin(a-b)]/2
+662: // ∫ sin(a1*x+b1)*cos(a2*x+b2) dx = [sin((a1+a2)x+(b1+b2)) + sin((a1-a2)x+(b1-b2))]/2
+682: // sin(a)*sin(b) = [cos(a-b) - cos(a+b)]/2
+694: // cos(a)*cos(b) = [cos(a-b) + cos(a+b)]/2
+712: // ============================================================================
+713: // TECHNIQUE 4: Completing the Square
+714: // For integrals involving 1/(ax^2+bx+c) or 1/sqrt(ax^2+bx+c)
+715: // ============================================================================
+724: // Case 1: ∫ 1/(ax^2 + bx + c) dx
+732: // No real roots: complete the square
+733: // ax^2 + bx + c = a[(x + b/(2a))^2 + (4ac-b^2)/(4a^2)]
+736: // ∫ numerVal / (a * ((x+h)^2 + k)) dx = (numerVal/(a*sqrt(k))) * atan((x+h)/sqrt(k))
+743: // Two real roots: partial fraction decomposition handles this
+744: // But we can also do it directly
+748: // 1/(a(x-r1)(x-r2)) = 1/(a(r1-r2)) * [1/(x-r1) - 1/(x-r2)]
+758: // Case 2: ∫ 1/sqrt(a - x^2) dx = asin(x/sqrt(a)) (when denom is sqrt)
+767: // sqrt(-a*x^2 + bx + c) form -> complete the square
+768: // -a(x^2 - b/a*x) + c = -a[(x - b/(2a))^2 - b^2/(4a^2)] + c
+769: // = -a(x - h)^2 + k where h = -qb/(2qa), k = qc - qb^2/(4qa)
+770: // Actually qa is negative. Let A = -qa > 0.
+771: // inner = -A*x^2 + qb*x + qc = -(A)(x^2 - (qb/A)x) + qc
+772: // = -A[(x - qb/(2A))^2 - qb^2/(4A^2)] + qc
+773: // = -A(x - h)^2 + k, where h=qb/(2A), k = qc + qb^2/(4A)
+778: // ∫ 1/sqrt(k - A(x-h)^2) dx = (1/sqrt(A)) * asin((x-h)*sqrt(A/k))
+784: // sqrt(a*x^2 + bx + c), a > 0: involves arcsinh or ln
+785: // ∫ 1/sqrt(a*x^2 + bx + c) dx = (1/sqrt(a)) * ln|2*sqrt(a)*sqrt(ax^2+bx+c) + 2ax + b|
+786: // = (1/sqrt(a)) * arcsinh((2ax+b)/sqrt(4ac-b^2))  when disc < 0
+790: // ∫ 1/sqrt(qa*(x+h)^2 + k) dx
+791: // Let u = x + h, ∫ 1/sqrt(qa*u^2 + k) dx = (1/sqrt(qa)) * ln|u*sqrt(qa) + sqrt(qa*u^2+k)|
+792: // Which is (1/sqrt(qa)) * arcsinh(u*sqrt(qa/k))
+794: // Use ln form since we don't have ARCSINH
+804: // Case 3: ∫ (px+q)/(ax^2+bx+c) dx - split into derivative match + completing the square
+810: // N(x) = la*x + lb_n, D(x) = qa*x^2 + qb*x + qc
+811: // D'(x) = 2*qa*x + qb
+812: // la*x + lb_n = (la/(2*qa)) * (2*qa*x + qb) + (lb_n - la*qb/(2*qa))
+818: // ∫ matchCoeff * D'/D dx = matchCoeff * ln|D|
+825: // ∫ remainder / D dx -> completing the square
+860: // ============================================================================
+861: // TECHNIQUE 3: General U-Substitution
+862: // Look for f(g(x)) * g'(x) patterns.
+863: // ============================================================================
+898: // If dividing by a multiplication, split the denominator! (e.g. 1 / (x * ln(x)) -> 1/ln(x) * 1/x)
+924: // Also if outer is a MUL or DIV chain of functions with the SAME inner arg, use that inner arg!
+925: // This is exactly the pi * sin(sqrt(x)) * exp(sqrt(x)) case!
+926: // Here `outer` is actually a composed tree. Let's just find any candidate globally in `outer`.
+945: // Exponent laws: if g = exp(x) and node = exp(2*x) -> return u^2
+955: // Exponent laws for POW: if g = x^2 and node = x^4 -> return u^2
+976: // VERY IMPORTANT: Ensure the substituted expression is completely free of the original variable `x`.
+977: // If it still contains `x`, the substitution was incomplete and integrating w.r.t `u` is mathematically invalid!
+1007: // ============================================================================
+1008: // TECHNIQUE 5: Risch-like Heuristic (Simplified Transcendental Integration)
+1009: // For expressions like e^(g(x)) * polynomial(x), detect patterns that have
+1010: // elementary antiderivatives using the "parallel Risch" approach.
+1011: // ============================================================================
+1017: // Pattern: p(x) * e^(ax+b) where p(x) is a polynomial
+1018: // ∫ p(x) * e^(ax+b) dx = Q(x) * e^(ax+b) where Q(x) has the same degree as p(x)
+1019: // and Q(x) satisfies: Q'(x) + a*Q(x) = p(x)
+1029: // Extract polynomial coefficients
+1036: // Solve Q'(x) + a*Q(x) = p(x)
+1037: // Q has same degree. Working from highest degree down:
+1038: // For Q = q_n*x^n + ... + q_0:
+1039: //   a*q_n = p_n  =>  q_n = p_n/a
+1040: //   n*q_n + a*q_{n-1} = p_{n-1}  =>  q_{n-1} = (p_{n-1} - n*q_n)/a
+1041: //   ...
+1045: // Subtract contribution from derivative of higher terms
+1063: // Pattern: p(x) * sin(ax+b) or p(x) * cos(ax+b)
+1064: // ∫ p(x)*sin(ax+b) dx = Q(x)*sin(ax+b) + R(x)*cos(ax+b)
+1065: // where deg(Q)=deg(R)=deg(p) and:
+1066: //   Q'(x)*sin + a*Q*cos + R'(x)*cos - a*R*sin = p*sin
+1067: // => Q' - aR = p, R' + aQ = 0
+1068: // => R = -Q'a, then Q' - a*(-Q'a... no.
+1069: // From R' + aQ = 0 => R' = -aQ
+1070: // From Q' - aR = p => Q' + a*(integrate of aQ) — actually let's solve directly:
+1071: // R = -Q'/a... wait, R' = -aQ. Let's solve iteratively.
+1072: // Q'(x) - a*R(x) = p(x)
+1073: // R'(x) + a*Q(x) = 0
+1074: // From (2): R(x) = -a * ∫Q dx ... that makes it recursive.
+1075: // Better: assume Q, R are polynomials of same degree n.
+1076: // Undetermined coefficients approach.
+1092: // System: Q' - a*R = p (if trig is sin), R' + a*Q = 0
+1093: //    or:  Q' - a*R = 0 (if trig is cos), R' + a*Q = p
+1094: // Q and R are polynomials of degree deg.
+1101: // Solve from highest degree downward
+1104: // Q'_i = (i+1)*q[i+1] (if i+1 <= deg, else 0)
+1105: // R'_i = (i+1)*r[i+1] (if i+1 <= deg, else 0)
+1110: // Q'_i - a*r[i] = p_i  =>  r[i] = (Q'_i - p_i) / a
+1112: // R'_i + a*q[i] = 0  =>  q[i] = -R'_i / a
+1115: // R'_i + a*q[i] = p_i  =>  q[i] = (p_i - R'_i) / a
+1117: // Q'_i - a*r[i] = 0  =>  r[i] = Q'_i / a
+1122: // Verify solution by checking the equations at degree -1 (constant terms from derivatives)
+1123: // The solution should be self-consistent due to our iterative approach.
+1144: // ============================================================================
+1145: // Original linear form integration
+1146: // ============================================================================
+1166: // Handle inverse trig with linear arguments
+1172: // ∫ asin(u) du = u*asin(u) + sqrt(1-u^2)
+1180: // ∫ acos(u) du = u*acos(u) - sqrt(1-u^2)
+1188: // ∫ atan(u) du = u*atan(u) - ln(1+u^2)/2
+1196: // ============================================================================
+1197: // LIATE priority for integration by parts
+1198: // ============================================================================
+1213: // ============================================================================
+1214: // PHASE 2: Circular IBP (exp * trig)
+1215: // ============================================================================
+1219: // Extract constant multipliers: e.g. e = k * (exp * sin)
+1223: // A simple loop to pull out constants from left-heavy MUL trees
+1273: // ============================================================================
+1274: // Main integration engine - orchestrates all techniques
+1275: // ============================================================================
+1299: // TECHNIQUE 6: Table lookup (check first for known patterns)
+1348: // PHASE 1: Pattern Matching Router for Advanced Techniques
+1357: // Fallback for circular IBP in case signature matching misses complex inner args
+1364: // TECHNIQUE 2: Trig power reduction (sin*cos, sin*sin, cos*cos products)
+1371: // TECHNIQUE 3: U-substitution for products
+1378: // TECHNIQUE 5: Risch heuristic (polynomial * exp, polynomial * trig)
+1385: // Integration by parts (LIATE rule)
+1394: // Try the other ordering as fallback
+1400: // Try the other ordering as fallback
+1423: // TECHNIQUE 4: Completing the square (1/(ax^2+bx+c), 1/sqrt(ax^2+bx+c), (px+q)/(ax^2+bx+c))
+1430: // TECHNIQUE 1: Partial fraction decomposition
+1437: // Basic substitution: f'(x)/f(x) -> ln|f(x)|
+1461: // TECHNIQUE 2: Trig power reduction
+1477: // IBP for isolated powers of transcendental functions, e.g. ln(x)^2 -> 1 * ln(x)^2
+1486: // Power with non-linear base: u-substitution
+1500: // a^x -> a^x / ln(a)
+1504: // ∫ base^(la*x+lb) dx = base^(la*x+lb) / (la * ln(base))
+1569: // U-substitution for trig with non-linear args
+1575: // Inner is linear -> already handled by integrateLinearForm
+1576: // This case shouldn't be reached, but just in case
