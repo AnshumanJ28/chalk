@@ -102,6 +102,9 @@ struct Parser {
         if (cur.type == Tok::CARET) {
             adv();
             ExprPtr exp = parseUnary();
+            if (base->op == Op::NUM && abs(base->num - M_E) < 1e-12) {
+                return fn(Op::EXP, exp);
+            }
             return powr(base, exp);
         }
         return base;
