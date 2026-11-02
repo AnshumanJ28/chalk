@@ -2,12 +2,13 @@
 
 **A calculus engine written from scratch in C++, served as a website.**
 
-[![Live Demo](https://img.shields.io/badge/demo-chalk--z9gs.onrender.com-brightgreen)](https://chalk-z9gs.onrender.com)
+[![Live Demo](https://img.shields.io/badge/demo-suspended-8b949e)](https://chalk-z9gs.onrender.com)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
 ![Flask](https://img.shields.io/badge/backend-Flask-lightgrey)
 ![pybind11](https://img.shields.io/badge/bridge-pybind11-orange)
 
-**[Try it live →](https://chalk-z9gs.onrender.com)** *(free-tier host, first load after idle takes ~30s to wake up)*
+> [!NOTE]
+> The live demo is currently suspended. Render's free tier provides 720 instance hours per month, and that allowance has been used up, so the service stays offline until it resets. The project runs fully locally; see [Run it locally](#run-it-locally).
 
 No SymPy. No Wolfram Alpha API. No external math library. Every derivative,
 integral, limit, and equation is computed by a hand-written C++ engine —
